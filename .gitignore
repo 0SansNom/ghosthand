@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.png
+Runner/GhosthandRunner.xcodeproj/xcuserdata/
+Runner/GhosthandRunner.xcodeproj/project.xcworkspace/xcuserdata/
+.pytest_cache/

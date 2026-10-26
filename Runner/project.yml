@@ -1,0 +1,43 @@
+# Generates GhosthandRunner.xcodeproj: `cd Runner && xcodegen generate`.
+# The generated project is committed, so XcodeGen is only needed to change it.
+name: GhosthandRunner
+options:
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    # A free Apple ID cannot register bundle IDs already taken by someone else,
+    # so the prefix is overridable: xcodebuild GHOSTHAND_BUNDLE_PREFIX=com.you.ghosthand
+    GHOSTHAND_BUNDLE_PREFIX: dev.ghosthand.runner
+targets:
+  GhosthandRunnerHost:
+    type: application
+    platform: iOS
+    sources: [Host]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(GHOSTHAND_BUNDLE_PREFIX).host
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Ghosthand Runner
+  GhosthandRunnerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: GhosthandRunnerHost
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(GHOSTHAND_BUNDLE_PREFIX).uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: GhosthandRunnerHost
+schemes:
+  GhosthandRunner:
+    build:
+      targets:
+        GhosthandRunnerHost: all
+        GhosthandRunnerUITests: [test]
+    test:
+      targets: [GhosthandRunnerUITests]

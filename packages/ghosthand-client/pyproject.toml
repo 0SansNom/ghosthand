@@ -1,0 +1,11 @@
+[project]
+name = "ghosthand-client"
+version = "0.1.0"
+description = "Zero-dependency client for the ghosthand console API (pytest, CI)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghosthand</title>
+<style>
+:root {
+  --bg: #f4f4f1; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e2e1dc;
+  --accent: #2f5bd3; --accent-ink: #ffffff; --ok: #1f8a4c; --warn: #b26b00; --bad: #c0362c;
+  --chip: #efeeea; --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413; --panel: #1e1e1c; --ink: #ecebe6; --muted: #9a9993; --line: #2f2f2c;
+    --accent: #7b9cff; --accent-ink: #0d1530; --ok: #4fc283; --warn: #e2a33d; --bad: #f07167;
+    --chip: #2a2a27; --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+header h1 { font-size: 16px; margin: 0 8px 0 0; letter-spacing: -.01em; }
+header .spacer { flex: 1; }
+select, input[type=text], input[type=number], textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+textarea { width: 100%; resize: vertical; min-height: 72px; }
+button { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+main { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 16px; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.phone { padding: 14px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 72px; }
+.screen { position: relative; border-radius: 26px; overflow: hidden; background: #000; aspect-ratio: 402 / 874; user-select: none; touch-action: none; }
+.screen img { width: 100%; height: 100%; object-fit: contain; display: block; cursor: crosshair; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; background: rgba(10,10,10,.82); color: #f2f2f2; }
+.overlay[hidden] { display: none; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row > input[type=text] { flex: 1; min-width: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.tabs { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--line); }
+.tabs button { border: none; background: none; padding: 8px 14px; border-radius: 8px; color: var(--muted); }
+.tabs button[aria-selected=true] { background: var(--chip); color: var(--ink); font-weight: 600; }
+.tab { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.tab[hidden] { display: none; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.segmented button { border: none; border-radius: 0; }
+.segmented button[aria-pressed=true] { background: var(--chip); font-weight: 600; }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--chip); }
+.pill.success { color: var(--ok); } .pill.failed, .pill.max_steps, .pill.cancelled { color: var(--warn); }
+.pill.error { color: var(--bad); } .pill.running { color: var(--accent); }
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+ol.plan { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+ol.plan li::before { content: "○ "; color: var(--muted); }
+ol.plan li.done::before { content: "● "; color: var(--ok); }
+.steps { display: flex; flex-direction: column; gap: 8px; }
+.step { border-left: 3px solid var(--line); padding: 4px 0 4px 10px; }
+.step.bad { border-color: var(--bad); }
+.step .head { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+.badge { font-size: 12px; padding-left: 4px; }
+.badge.ok { color: var(--ok); } .badge.no { color: var(--warn); }
+.list { display: flex; flex-direction: column; }
+.list button { text-align: left; border: none; border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 4px; display: flex; gap: 10px; align-items: baseline; background: none; }
+.list button:hover { background: var(--chip); }
+.list .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.replay { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 16px; }
+@media (max-width: 1100px) { .replay { grid-template-columns: 1fr; } }
+.replay img { width: 100%; border-radius: 18px; border: 1px solid var(--line); }
+pre.elements { margin: 0; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 70vh; overflow: auto; }
+.error-text { color: var(--bad); white-space: pre-wrap; }
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 14px; border-radius: 10px; max-width: calc(100% - 32px); }
+.toast[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ghosthand</h1>
+  <select id="device" aria-label="Device"></select>
+  <button id="refresh-devices" title="Reload devices">↻</button>
+  <span id="runner-state" class="small muted"></span>
+  <span class="spacer"></span>
+  <button id="runner-toggle"></button>
+</header>
+
+<main>
+  <section class="panel phone" aria-label="Screen">
+    <div class="screen" id="screen">
+      <img id="screen-img" alt="Device screen" draggable="false">
+      <div class="overlay" id="screen-overlay" hidden>
+        <div id="overlay-text"></div>
+        <button class="primary" id="overlay-start">Start the runner</button>
+      </div>
+    </div>
+    <div class="row small muted">Click: tap · hold: long press · drag: swipe</div>
+    <div class="row">
+      <button data-press="home">⌂ Home</button>
+      <button id="live-toggle" aria-pressed="true">⏸ Pause</button>
+      <span class="spacer"></span>
+      <span id="current-app" class="small muted"></span>
+    </div>
+    <form class="row" id="type-form"><input type="text" id="type-text" placeholder="Text to type (focused field)"><button>Type</button></form>
+    <form class="row" id="launch-form"><input type="text" id="launch-id" placeholder="Bundle ID or URL (com.apple.Preferences, https://…)"><button>Open</button></form>
+  </section>
+
+  <section class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="agent" aria-selected="true">Agent</button>
+      <button role="tab" data-tab="traces" aria-selected="false">Traces</button>
+      <button role="tab" data-tab="elements" aria-selected="false">Elements</button>
+    </div>
+
+    <div class="tab" id="tab-agent">
+      <form id="task-form" class="card">
+        <textarea id="task-text" placeholder="e.g. Turn on dark mode in Settings" required></textarea>
+        <div class="row">
+          <div class="segmented" role="group" aria-label="Mode">
+            <button type="button" data-mode="fast" aria-pressed="true">Fast</button>
+            <button type="button" data-mode="reliable" aria-pressed="false">Reliable</button>
+          </div>
+          <label class="row small">Max steps <input type="number" id="max-steps" value="30" min="1" max="100" style="width:70px"></label>
+          <span class="spacer"></span>
+          <button class="primary" id="task-run">Run</button>
+        </div>
+        <div id="task-error" class="error-text small" hidden></div>
+      </form>
+
+      <div id="current" class="card" hidden>
+        <div class="row"><span id="cur-status" class="pill"></span><strong id="cur-task" style="flex:1"></strong><button class="danger" id="cur-cancel">Stop</button></div>
+        <ol class="plan" id="cur-plan"></ol>
+        <div id="cur-summary"></div>
+        <div class="steps" id="cur-steps"></div>
+      </div>
+
+      <div>
+        <div class="small muted" style="margin-bottom:6px">Tasks in this session</div>
+        <div class="list" id="task-list"></div>
+      </div>
+    </div>
+
+    <div class="tab" id="tab-traces" hidden>
+      <div class="list" id="trace-list"></div>
+      <div id="replay" hidden>
+        <div class="row" style="margin-bottom:12px"><button id="replay-back">← Traces</button><strong id="replay-title" style="flex:1"></strong><span id="replay-status" class="pill"></span></div>
+        <div class="replay">
+          <div>
+            <img id="replay-img" alt="Screen the agent saw at this step">
+            <div class="row" style="margin-top:8px"><button id="replay-prev">◀</button><input type="range" id="replay-range" min="0" value="0" style="flex:1"><button id="replay-next">▶</button></div>
+          </div>
+          <div class="steps">
+            <div id="replay-step"></div>
+            <ol class="plan" id="replay-plan"></ol>
+            <div id="replay-summary" class="small muted"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" id="tab-elements" hidden>
+      <div class="row"><button id="elements-refresh">Refresh</button><span id="elements-app" class="small muted"></span></div>
+      <pre class="elements" id="elements-text"></pre>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { udid: null, live: true, mode: "fast", currentTask: null, trace: null, step: 0 };
+
+async function api(path, options = {}) {
+  const init = { ...options, headers: { ...(options.body ? { "Content-Type": "application/json" } : {}) } };
+  if (options.body) init.body = JSON.stringify(options.body);
+  const response = await fetch(path, init);
+  const type = response.headers.get("content-type") || "";
+  const data = type.includes("json") ? await response.json() : await response.blob();
+  if (!response.ok) throw Object.assign(new Error(data.error || response.statusText), { status: response.status });
+  return data;
+}
+function toast(message) {
+  const el = $("toast"); el.textContent = message; el.hidden = false;
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => (el.hidden = true), 4000);
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const args = (input) => Object.entries(input || {}).filter(([k]) => k !== "reason").map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ");
+const STATUS = { success: "succeeded", failed: "failed", max_steps: "out of steps", error: "error", cancelled: "cancelled",
+                 running: "running", cancelling: "stopping…" };
+function pill(el, status) { el.className = `pill ${status}`; el.textContent = STATUS[status] || status; }
+
+async function loadDevices() {
+  const select = $("device");
+  try {
+    const devices = await api("/api/devices");
+    const previous = state.udid;
+    select.innerHTML = devices.map((d) =>
+      `<option value="${esc(d.udid)}">${d.ready ? "●" : "○"} ${esc(d.name)} — ${d.kind === "device" ? "iPhone" : "simulateur"} ${esc(d.runtime)}</option>`).join("");
+    const pick = devices.find((d) => d.udid === previous) || devices.find((d) => d.runner) || devices.find((d) => d.ready) || devices[0];
+    if (pick) { select.value = pick.udid; selectDevice(pick.udid, devices); }
+  } catch (e) { toast(e.message); }
+}
+function selectDevice(udid, devices) {
+  state.udid = udid;
+  const d = (devices || []).find((x) => x.udid === udid);
+  $("runner-state").textContent = d ? (d.runner ? "runner on" : "runner off") : "";
+  $("runner-toggle").textContent = d && d.runner ? "Stop the runner" : "Start the runner";
+  $("runner-toggle").dataset.action = d && d.runner ? "stop" : "start";
+}
+$("device").onchange = () => { state.udid = $("device").value; loadDevices(); };
+$("refresh-devices").onclick = loadDevices;
+async function runner(action) {
+  const button = $("runner-toggle"); button.disabled = true;
+  $("runner-state").textContent = action === "start" ? "starting… (may build first; keep the iPhone unlocked)" : "stopping…";
+  try { await api(`/api/devices/${encodeURIComponent(state.udid)}/runner`, { method: "POST", body: { action } }); }
+  catch (e) { toast(e.message); }
+  button.disabled = false; loadDevices();
+}
+$("runner-toggle").onclick = () => runner($("runner-toggle").dataset.action);
+$("overlay-start").onclick = () => runner("start");
+
+let screenUrl = null;
+async function pollScreen() {
+  if (state.live && state.udid && !document.hidden) {
+    try {
+      const blob = await api(`/api/devices/${encodeURIComponent(state.udid)}/screen.jpg`);
+      const url = URL.createObjectURL(blob);
+      $("screen-img").src = url;
+      if (screenUrl) URL.revokeObjectURL(screenUrl);
+      screenUrl = url;
+      $("screen-overlay").hidden = true;
+    } catch (e) {
+      $("overlay-text").textContent = e.status === 409 ? e.message : `Screen unavailable: ${e.message}`;
+      $("overlay-start").hidden = e.status !== 409;
+      $("screen-overlay").hidden = false;
+    }
+  }
+  setTimeout(pollScreen, 500);
+}
+$("live-toggle").onclick = () => {
+  state.live = !state.live;
+  $("live-toggle").textContent = state.live ? "⏸ Pause" : "▶ Live";
+  $("live-toggle").setAttribute("aria-pressed", state.live);
+};
+
+function toPoint(event) {
+  const img = $("screen-img"), rect = img.getBoundingClientRect();
+  const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+  const offsetX = (rect.width - img.naturalWidth * scale) / 2, offsetY = (rect.height - img.naturalHeight * scale) / 2;
+  return { x: (event.clientX - rect.left - offsetX) / scale, y: (event.clientY - rect.top - offsetY) / scale };
+}
+async function act(body) {
+  try { await api(`/api/devices/${encodeURIComponent(state.udid)}/action`, { method: "POST", body }); }
+  catch (e) { toast(e.message); }
+}
+let gesture = null;
+$("screen-img").addEventListener("pointerdown", (e) => {
+  if (!$("screen-img").naturalWidth) return;
+  gesture = { start: toPoint(e), time: performance.now() };
+  $("screen-img").setPointerCapture(e.pointerId);
+});
+$("screen-img").addEventListener("pointerup", (e) => {
+  if (!gesture) return;
+  const end = toPoint(e), held = (performance.now() - gesture.time) / 1000;
+  const moved = Math.hypot(end.x - gesture.start.x, end.y - gesture.start.y);
+  const { start } = gesture; gesture = null;
+  if (moved < 8) act({ type: "tap", x: start.x, y: start.y, duration: held > 0.6 ? held : null });
+  else act({ type: "swipe", fromX: start.x, fromY: start.y, toX: end.x, toY: end.y, duration: Math.min(Math.max(held, 0.1), 1.5) });
+});
+document.querySelectorAll("[data-press]").forEach((b) => (b.onclick = () => act({ type: "press", button: b.dataset.press })));
+$("type-form").onsubmit = (e) => { e.preventDefault(); const t = $("type-text").value; if (t) { act({ type: "type", text: t }); $("type-text").value = ""; } };
+$("launch-form").onsubmit = (e) => {
+  e.preventDefault(); const v = $("launch-id").value.trim(); if (!v) return;
+  act(v.includes("://") ? { type: "open_url", url: v } : { type: "launch", bundleId: v });
+};
+
+document.querySelectorAll("[role=tab]").forEach((tab) => (tab.onclick = () => {
+  document.querySelectorAll("[role=tab]").forEach((t) => t.setAttribute("aria-selected", t === tab));
+  ["agent", "traces", "elements"].forEach((name) => ($(`tab-${name}`).hidden = name !== tab.dataset.tab));
+  if (tab.dataset.tab === "traces") loadTraces();
+  if (tab.dataset.tab === "elements") loadElements();
+}));
+
+document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
+  state.mode = b.dataset.mode;
+  document.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+}));
+$("task-form").onsubmit = async (e) => {
+  e.preventDefault();
+  $("task-error").hidden = true; $("task-run").disabled = true;
+  try {
+    const task = await api("/api/tasks", { method: "POST", body: {
+      task: $("task-text").value, device: state.udid, mode: state.mode,
+      maxSteps: Number($("max-steps").value) || 30 } });
+    state.currentTask = task.runId; renderTask(task); loadTasks();
+  } catch (err) { $("task-error").textContent = err.message; $("task-error").hidden = false; }
+  $("task-run").disabled = false;
+};
+function stepHtml(s) {
+  const check = s.check ? `<div class="badge ${s.check.verified ? "ok" : "no"}">${s.check.verified ? "✓" : "✗"} ${esc(s.check.reason)}</div>` : "";
+  return `<div class="step ${s.ok ? "" : "bad"}"><div class="head">${s.number}. ${esc(s.action)}(${esc(args(s.input))})</div>
+    ${s.reason ? `<div class="small muted">${esc(s.reason)}</div>` : ""}
+    ${!s.check && !s.ok ? `<div class="small error-text">${esc(s.outcome)}</div>` : ""}${check}</div>`;
+}
+function planHtml(plan) { return (plan || []).map((c) => `<li class="${c.done ? "done" : ""}">${esc(c.goal)} <span class="muted small">— ${esc(c.evidence)}</span></li>`).join(""); }
+function renderTask(t) {
+  $("current").hidden = false;
+  pill($("cur-status"), t.status);
+  $("cur-task").textContent = t.task;
+  $("cur-cancel").hidden = t.status !== "running";
+  $("cur-plan").innerHTML = planHtml(t.plan);
+  $("cur-summary").textContent = t.summary || "";
+  $("cur-steps").innerHTML = (t.steps || []).slice().reverse().map(stepHtml).join("");
+}
+async function pollTask() {
+  if (state.currentTask) {
+    try {
+      const t = await api(`/api/tasks/${state.currentTask}`); renderTask(t);
+      if (!["running", "cancelling"].includes(t.status)) { state.currentTask = null; loadTasks(); }
+    } catch (e) { state.currentTask = null; }
+  }
+  setTimeout(pollTask, 1000);
+}
+$("cur-cancel").onclick = async () => { if (state.currentTask) await api(`/api/tasks/${state.currentTask}/cancel`, { method: "POST", body: {} }).catch((e) => toast(e.message)); };
+async function loadTasks() {
+  const tasks = await api("/api/tasks").catch(() => []);
+  $("task-list").innerHTML = tasks.map((t) =>
+    `<button data-run="${esc(t.runId)}"><span class="pill ${t.status}">${STATUS[t.status] || t.status}</span><span class="t">${esc(t.task)}</span><span class="small muted">${t.stepCount} steps</span></button>`).join("")
+    || `<div class="small muted">No tasks yet.</div>`;
+  $("task-list").querySelectorAll("[data-run]").forEach((b) => (b.onclick = async () => {
+    state.currentTask = b.dataset.run; renderTask(await api(`/api/tasks/${b.dataset.run}`));
+  }));
+}
+
+async function loadTraces() {
+  $("replay").hidden = true; $("trace-list").hidden = false;
+  const traces = await api("/api/traces").catch((e) => (toast(e.message), []));
+  $("trace-list").innerHTML = traces.map((t) =>
+    `<button data-trace="${esc(t.run_id)}"><span class="pill ${t.status}">${STATUS[t.status] || t.status}</span><span class="t">${esc(t.task)}</span><span class="small muted">${esc(t.mode || "fast")} · ${t.steps ?? "?"} steps · ${esc((t.started_at || "").replace("T", " "))}</span></button>`).join("")
+    || `<div class="small muted">No traces yet: run a task.</div>`;
+  $("trace-list").querySelectorAll("[data-trace]").forEach((b) => (b.onclick = () => openTrace(b.dataset.trace)));
+}
+async function openTrace(id) {
+  state.trace = await api(`/api/traces/${id}`); state.step = 0;
+  $("trace-list").hidden = true; $("replay").hidden = false;
+  $("replay-title").textContent = state.trace.task;
+  pill($("replay-status"), state.trace.status);
+  $("replay-summary").textContent = `${state.trace.summary || ""} — ${state.trace.seconds ?? "?"} s, model ${state.trace.model || "?"}`;
+  $("replay-plan").innerHTML = planHtml(state.trace.plan);
+  $("replay-range").max = Math.max(state.trace.steps_detail.length - 1, 0);
+  showStep();
+}
+function showStep() {
+  const steps = state.trace.steps_detail; if (!steps.length) { $("replay-step").textContent = "No steps."; return; }
+  const s = steps[state.step];
+  $("replay-img").src = `/api/traces/${state.trace.run_id}/${s.screenshot}`;
+  $("replay-range").value = state.step;
+  $("replay-step").innerHTML = `<div class="small muted">Step ${state.step + 1} / ${steps.length} · ${esc(s.app)} · ${s.seconds}s</div>${stepHtml(s)}<div class="small muted">→ ${esc(s.outcome)}</div>`;
+}
+$("replay-prev").onclick = () => { if (state.step > 0) { state.step--; showStep(); } };
+$("replay-next").onclick = () => { if (state.step < state.trace.steps_detail.length - 1) { state.step++; showStep(); } };
+$("replay-range").oninput = () => { state.step = Number($("replay-range").value); showStep(); };
+$("replay-back").onclick = loadTraces;
+document.addEventListener("keydown", (e) => {
+  if ($("replay").hidden || e.target.matches("input, textarea")) return;
+  if (e.key === "ArrowLeft") $("replay-prev").click();
+  if (e.key === "ArrowRight") $("replay-next").click();
+});
+
+async function loadElements() {
+  try {
+    const data = await api(`/api/devices/${encodeURIComponent(state.udid)}/elements`);
+    $("elements-app").textContent = data.app + (data.locked ? " — iPhone locked" : "");
+    $("elements-text").textContent = data.text;
+  } catch (e) { $("elements-text").textContent = e.message; }
+}
+$("elements-refresh").onclick = loadElements;
+
+loadDevices().then(() => { pollScreen(); loadTasks(); });
+pollTask();
+</script>
+</body>
+</html>
