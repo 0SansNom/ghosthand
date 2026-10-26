@@ -195,3 +195,7 @@ Every request must send `Authorization: Bearer <token>`. `runner start` creates 
 ## Editing the Xcode project
 
 `Runner/GhosthandRunner.xcodeproj` is generated from `Runner/project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen): `cd Runner && xcodegen generate`.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
